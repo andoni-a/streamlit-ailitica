@@ -177,12 +177,12 @@ view_state = pdk.ViewState(
 deck = pdk.Deck(
     layers=[layer],
     initial_view_state=view_state,
-    map_style=None,                 # <<< SIN MAPBOX
-    background_color=[0, 0, 0, 255],  # fondo negro
+    map_style=None,  # sin mapa base
     tooltip={
         "text": "Zona: {direccion}\nMedia: {peatones_media} peatones"
     },
 )
+
 
 st.subheader("Mapa 3D interactivo")
 st.pydeck_chart(deck)
