@@ -149,7 +149,7 @@ agg["color"] = agg["peatones_media"].apply(
     lambda v: value_to_color(v, vmin, vmax)
 )
 
-# ---------- PASO 5: MAPA 3D OSCURO CON COLUMNAS ----------
+# ---------- PASO 5: MAPA 3D OSCURO SIN MAPBOX ----------
 
 mid_lat = agg["lat"].mean()
 mid_lon = agg["lon"].mean()
@@ -175,9 +175,10 @@ view_state = pdk.ViewState(
 )
 
 deck = pdk.Deck(
-    map_style="mapbox://styles/mapbox/dark-v11",  # mapa oscuro
-    initial_view_state=view_state,
     layers=[layer],
+    initial_view_state=view_state,
+    map_style=None,                 # <<< SIN MAPBOX
+    background_color=[0, 0, 0, 255],  # fondo negro
     tooltip={
         "text": "Zona: {direccion}\nMedia: {peatones_media} peatones"
     },
@@ -185,6 +186,7 @@ deck = pdk.Deck(
 
 st.subheader("Mapa 3D interactivo")
 st.pydeck_chart(deck)
+
 
 # ---------- PASO 6: TABLA RESUMEN (opcional) ----------
 
