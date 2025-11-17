@@ -13,19 +13,19 @@ st.set_page_config(
 st.title("Mapa 3D de peatones por zona")
 st.markdown(
     """
-    Visualización 3D de la media de peatones por zona en Madrid.
-    Usa el *slider* inferior para elegir la **franja horaria** del día.
+    Visualización 3D de la media de peatones por zona (datos sintéticos).
+    Usa el *slider* para elegir la **franja horaria** del día.
     """
 )
 
-# ---------- PASO 1: CARGA Y LIMPIEZA DE DATOS ----------
+# ---------- CARGA DE DATOS ----------
 
 @st.cache_data
 def load_data():
-    # Ajusta el nombre del fichero si hace falta
-    df = pd.read_csv("PEATONES_2024.csv", sep=";")
+    # NUEVO: usamos el CSV sintético
+    df = pd.read_csv("df_synthetic_pedestrians.csv")
 
-    # Hora -> entero [0..23]
+    # Convertimos "hora" (ej. "10:00") a entero 0–23
     def parse_hour(s):
         try:
             return int(str(s).split(":")[0])
@@ -34,29 +34,17 @@ def load_data():
 
     df["hour"] = df["hora"].apply(parse_hour)
 
-    # Coordenadas vienen como "40.417.386" -> 40.417386
-    def fix_coord(s):
-        s = str(s).strip()
-        if s == "" or s.lower() == "nan":
-            return np.nan
+    # Renombramos por comodidad
+    df.rename(
+        columns={
+            "latitude": "lat",
+            "longitude": "lon",
+            "noisy_peatones_correlated": "peatones",
+        },
+        inplace=True,
+    )
 
-        neg = s.startswith("-")
-        if neg:
-            s2 = s[1:]
-        else:
-            s2 = s
-
-        digits = s2.replace(".", "")
-        if not digits.isdigit():
-            return np.nan
-
-        val = int(digits) / 1e6
-        return -val if neg else val
-
-    df["lat"] = df["latitude"].apply(fix_coord)
-    df["lon"] = df["longitude"].apply(fix_coord)
-
-    # Quitamos filas sin coordenadas u hora
+    # Quitamos filas sin hora o sin coordenadas
     df = df.dropna(subset=["lat", "lon", "hour"])
 
     return df
@@ -64,7 +52,7 @@ def load_data():
 
 df = load_data()
 
-# ---------- PASO 2: SLIDER DE FRANJA HORARIA ----------
+# ---------- SLIDER DE FRANJA HORARIA ----------
 
 st.subheader("Filtro temporal")
 
@@ -91,19 +79,18 @@ if df_filtered.empty:
     st.warning("No hay datos para esa franja horaria.")
     st.stop()
 
-# ---------- PASO 3: AGREGACIÓN POR ZONA ----------
+# ---------- AGREGACIÓN POR ZONA (DISTRITO + LAT/LON) ----------
 
-# Considero cada device_id/dirección como una "zona"
 agg = (
     df_filtered.groupby(
-        ["device_id", "direccion", "lat", "lon"], as_index=False
+        ["distrito", "lat", "lon"], as_index=False
     )["peatones"]
     .mean()
 )
 
 agg.rename(columns={"peatones": "peatones_media"}, inplace=True)
 
-# ---------- PASO 4: ESCALA DE COLORES (AZUL -> VERDE -> AMARILLO -> ROJO) ----------
+# ---------- ESCALA DE COLORES (AZUL → VERDE → AMARILLO → ROJO) ----------
 
 vmin = agg["peatones_media"].min()
 vmax = agg["peatones_media"].max()
@@ -149,7 +136,7 @@ agg["color"] = agg["peatones_media"].apply(
     lambda v: value_to_color(v, vmin, vmax)
 )
 
-# ---------- PASO 5: MAPA 3D OSCURO SIN MAPBOX ----------
+# ---------- MAPA 3D (SIN MAPBOX, FONDO OSCURO/NEUTRO) ----------
 
 mid_lat = agg["lat"].mean()
 mid_lon = agg["lon"].mean()
@@ -159,8 +146,8 @@ layer = pdk.Layer(
     data=agg,
     get_position="[lon, lat]",
     get_elevation="peatones_media",
-    elevation_scale=0.5,  # ajusta para más/menos altura
-    radius=60,            # radio (en metros aprox.)
+    elevation_scale=0.5,   # ajusta si quieres más/menos altura
+    radius=40,             # tamaño de las columnas
     get_fill_color="color",
     pickable=True,
     auto_highlight=True,
@@ -177,22 +164,20 @@ view_state = pdk.ViewState(
 deck = pdk.Deck(
     layers=[layer],
     initial_view_state=view_state,
-    map_style=None,  # sin mapa base
+    map_style=None,  # sin mapa base (solo tus datos)
     tooltip={
-        "text": "Zona: {direccion}\nMedia: {peatones_media} peatones"
+        "text": "Distrito: {distrito}\nMedia: {peatones_media} peatones"
     },
 )
-
 
 st.subheader("Mapa 3D interactivo")
 st.pydeck_chart(deck)
 
-
-# ---------- PASO 6: TABLA RESUMEN (opcional) ----------
+# ---------- TABLA RESUMEN (OPCIONAL) ----------
 
 with st.expander("Ver tabla de medias por zona"):
     st.dataframe(
-        agg[["direccion", "peatones_media", "lat", "lon"]]
+        agg[["distrito", "peatones_media", "lat", "lon"]]
         .sort_values("peatones_media", ascending=False)
         .reset_index(drop=True)
     )
