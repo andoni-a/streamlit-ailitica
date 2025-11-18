@@ -190,7 +190,7 @@ layer = pdk.Layer(
 view_state = pdk.ViewState(
     latitude=mid_lat,
     longitude=mid_lon,
-    zoom=15,
+    zoom=11,
     pitch=55,   # inclinación para vista más “cinemática”
     bearing=15, # un poco de giro
 )
