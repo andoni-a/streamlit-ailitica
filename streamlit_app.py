@@ -181,7 +181,7 @@ layer = pdk.Layer(
     get_position="[lon, lat]",
     get_elevation="height",
     elevation_scale=1,        # ya hemos escalado nosotros
-    radius=40,                # radio de cada columna
+    radius=10,                # radio de cada columna
     get_fill_color="color",
     pickable=True,
     auto_highlight=True,
@@ -190,7 +190,7 @@ layer = pdk.Layer(
 view_state = pdk.ViewState(
     latitude=mid_lat,
     longitude=mid_lon,
-    zoom=11,
+    zoom=50,
     pitch=55,   # inclinación para vista más “cinemática”
     bearing=15, # un poco de giro
 )
