@@ -122,7 +122,7 @@ def normalize_value(v, vmin, vmax):
 # Alturas: normalizamos 0–1, aplicamos una potencia (gamma)
 # para enfatizar diferencias y escalamos a una altura máxima.
 HEIGHT_MAX = 1500.0   # súbelo/bájalo si quieres más/menos altura
-GAMMA = 1.4           # >1 realza las diferencias en la parte alta
+GAMMA = 1.1           # >1 realza las diferencias en la parte alta
 
 agg["norm"] = agg["peatones_media"].apply(
     lambda v: normalize_value(v, vmin, vmax)
@@ -190,7 +190,7 @@ layer = pdk.Layer(
 view_state = pdk.ViewState(
     latitude=mid_lat,
     longitude=mid_lon,
-    zoom=50,
+    zoom=15,
     pitch=55,   # inclinación para vista más “cinemática”
     bearing=15, # un poco de giro
 )
